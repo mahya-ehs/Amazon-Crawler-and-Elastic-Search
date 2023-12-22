@@ -121,7 +121,20 @@ def crawlProduct(page):
             review_text.append(rev.text)
             print(review_text)
             
+        # get back from review page to product page
         driver.back()
+
+        # crawling related products
+        time.sleep(7)
+        
+        related_products_table = driver.find_element(By.ID, "sp_detail")
+        related_products = related_products_table.find_elements(By.TAG_NAME, "li")
+        for index, rp in enumerate(related_products):
+            if index == 2:
+                break
+            link = rp.find_element(By.CLASS_NAME, "a-link-normal").get_attribute("href")
+            print(link)
+
         print()
 
         # constructing the json of the crawled product
@@ -132,7 +145,8 @@ def crawlProduct(page):
                     "Product Number of Rates": product_rate_count,
                     "Product Image Address": product_img,
                     "Product Description": product_description,
-                    "Product Reviews": {}
+                    "Product Reviews": {},
+                    "Related Products": {}
                 }
         
         # adding each review to the json file
@@ -141,6 +155,8 @@ def crawlProduct(page):
 
         print("\nproduct data: " , product_data)
         
+
+        # adding product index and data to json file
         existing_data.append({
             "Product Index": (page * 16) + i + 1,
             "Product Data": product_data
@@ -148,6 +164,7 @@ def crawlProduct(page):
 
         with open(output_file_path, "w", encoding="utf-8") as json_file:
             json.dump(existing_data, json_file, ensure_ascii=False, indent=4)
+
 
         driver.back()
 
