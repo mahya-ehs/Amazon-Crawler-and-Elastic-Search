@@ -19,17 +19,17 @@ service = Service(executable_path="F:\\university\\amazon crawler\\chromedriver.
 options = webdriver.ChromeOptions()
 driver = webdriver.Chrome(service=service, options=options)
 driver.get("https://www.amazon.com")
-
+time.sleep(5)
 # handling Amazon captcha
 captcha = AmazonCaptcha.fromdriver(driver)
 solution = captcha.solve()
 
-time.sleep(3) # turn to 30 if neeeded
+time.sleep(5) # turn to 30 if neeeded
 
 # get to 'video games' page
 driver.get("https://www.amazon.com/s?rh=n%3A16225016011&fs=true&ref=lp_16225016011_sar")
 
-time.sleep(2)
+time.sleep(30)
 
 output_file_path = "scraped_data.json"
 
@@ -158,55 +158,70 @@ def crawlProduct(page):
             "Product Data": product_data
         })
         
-        time.sleep(5)
+        time.sleep(30)
         
-        # crawling related products
-        from selenium.webdriver.common.keys import Keys
-        header_element = driver.find_element(By.XPATH, '//*[text()="Products related to this item"]')
-        driver.execute_script("arguments[0].scrollIntoView(true);", header_element)
+        # find related products
+        # from selenium.webdriver.common.keys import Keys
+        # header_element = driver.find_element(By.XPATH, '//*[text()="Products related to this item"]')
+        # driver.execute_script("arguments[0].scrollIntoView(true);", header_element)
         
         delay = 15
+        related_products_table = None
         try:
             related_products_table = WebDriverWait(driver, delay).until(
                 EC.presence_of_element_located((By.ID, 'anonCarousel1'))
             )
             print("Element is present in the DOM now")
-        except NoSuchElementException:
+        except TimeoutException or NoSuchElementException:
+            print("Element did not show up")
+
+        try:
+            related_products_table = WebDriverWait(driver, delay).until(
+                EC.presence_of_element_located((By.ID, 'anonCarousel3'))
+            )
+            print("Element is present in the DOM now")
+        except TimeoutException or NoSuchElementException:
+            print("Element did not show up")
+        
+        try:
             related_products_table = WebDriverWait(driver, delay).until(
                 EC.presence_of_element_located((By.ID, 'anonCarousel6'))
             )
-        except TimeoutException:
+            print("Element is present in the DOM now")
+        except TimeoutException or NoSuchElementException:
             print("Element did not show up")
-            
-        related_products = related_products_table.find_elements(By.TAG_NAME, "li")
-        related_links = []
-        for index, rp in enumerate(related_products):
-            if index == 2:
-                break
-            related_links.append(rp.find_element(By.CLASS_NAME, "a-link-normal").get_attribute("href"))
-        print(related_links)
         
-        for link in related_links:
-            driver.get(link)
-            related_product_info = findInformation()
-            related_product_data = {
-                    "Product Name": related_product_info["name"],
-                    "Product Price": related_product_info["price"],
-                    "Product Rating": related_product_info["rating"],
-                    "Product Number of Rates": related_product_info["rate_count"],
-                    "Product Image Address": related_product_info["image_src"],
-                    "Product Description": related_product_info["description"],
-                    "Product Reviews": {}
-                }
-            # adding each review to the json file
-            if related_product_info["reviews"] is not None:
-                for k, review in enumerate(related_product_info["reviews"], start=1):
-                    related_product_data["Product Reviews"][str(k)] = review        
+        if related_products_table is not None:
+            related_products = related_products_table.find_elements(By.TAG_NAME, "li")
+            related_links = []
+            for index, rp in enumerate(related_products):
+                if index == 2:
+                    break
+                related_links.append(rp.find_element(By.CLASS_NAME, "a-link-normal").get_attribute("href"))
+            print(related_links)
+            
+            # crawl related products
+            for link in related_links:
+                driver.get(link)
+                related_product_info = findInformation()
+                related_product_data = {
+                        "Product Name": related_product_info["name"],
+                        "Product Price": related_product_info["price"],
+                        "Product Rating": related_product_info["rating"],
+                        "Product Number of Rates": related_product_info["rate_count"],
+                        "Product Image Address": related_product_info["image_src"],
+                        "Product Description": related_product_info["description"],
+                        "Product Reviews": {}
+                    }
+                # adding each review to the json file
+                if related_product_info["reviews"] is not None:
+                    for k, review in enumerate(related_product_info["reviews"], start=1):
+                        related_product_data["Product Reviews"][str(k)] = review        
 
-            product_data["Related Products"].append(related_product_data) 
-            driver.back()
+                product_data["Related Products"].append(related_product_data) 
+                driver.back()
 
-            time.sleep(5)
+                time.sleep(5)
 
         print()
 
