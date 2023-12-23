@@ -24,12 +24,31 @@ time.sleep(5)
 captcha = AmazonCaptcha.fromdriver(driver)
 solution = captcha.solve()
 
-time.sleep(5) # turn to 30 if neeeded
+time.sleep(3) # turn to 30 if neeeded
 
 # get to 'video games' page
 driver.get("https://www.amazon.com/s?rh=n%3A16225016011&fs=true&ref=lp_16225016011_sar")
 
+time.sleep(2)
+
+choose_btn = driver.find_element(By.ID, "nav-global-location-popover-link")
+choose_btn.click()
 time.sleep(3)
+dropdown = driver.find_element(By.ID, "GLUXCountryListDropdown")
+dropdown.click()
+time.sleep(2)
+
+from selenium.webdriver.common.action_chains import ActionChains
+
+element = driver.find_element(By.ID, "GLUXCountryList_79")
+time.sleep(2)
+actions = ActionChains(driver)
+actions.move_to_element(element).perform()
+time.sleep(2)
+WebDriverWait(driver, 5).until(EC.visibility_of_element_located((By.ID, "GLUXCountryList_79"))).click()
+time.sleep(2)
+driver.find_element(By.CSS_SELECTOR, ".a-popover-footer > span:nth-child(1) > span:nth-child(1)").click()
+time.sleep(7)
 
 output_file_path = "scraped_data.json"
 
