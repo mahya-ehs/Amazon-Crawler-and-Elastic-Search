@@ -180,9 +180,9 @@ def crawlProduct(page):
         time.sleep(30)
         
         # find related products
-        # from selenium.webdriver.common.keys import Keys
-        # header_element = driver.find_element(By.XPATH, '//*[text()="Products related to this item"]')
-        # driver.execute_script("arguments[0].scrollIntoView(true);", header_element)
+        from selenium.webdriver.common.keys import Keys
+        header_element = driver.find_element(By.XPATH, '//*[text()="Products related to this item"]')
+        driver.execute_script("arguments[0].scrollIntoView(true);", header_element)
         
         delay = 15
         related_products_table = None
