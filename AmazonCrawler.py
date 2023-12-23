@@ -8,6 +8,11 @@ from selenium.common.exceptions import NoSuchElementException
 from amazoncaptcha import AmazonCaptcha
 from selenium import webdriver
 import json
+from selenium.webdriver.support.ui import WebDriverWait
+from selenium.webdriver.support import expected_conditions as EC
+from selenium.common.exceptions import TimeoutException
+from selenium.webdriver.common.by import By
+
 
 # starting the service using chrome web driver
 service = Service(executable_path="F:\\university\\amazon crawler\\chromedriver.exe")
@@ -19,7 +24,7 @@ driver.get("https://www.amazon.com")
 captcha = AmazonCaptcha.fromdriver(driver)
 solution = captcha.solve()
 
-time.sleep(5) # turn to 30 if neeeded
+time.sleep(3) # turn to 30 if neeeded
 
 # get to 'video games' page
 driver.get("https://www.amazon.com/s?rh=n%3A16225016011&fs=true&ref=lp_16225016011_sar")
@@ -35,35 +40,30 @@ def findInformation():
     # product name
     try:
         product_info["name"] = driver.find_element(By.ID, "productTitle").text
-        print("name ", product_info["name"])
     except NoSuchElementException as e:
         print("no name")
 
     # product rating
     try:
         product_info["rating"] = driver.find_element(By.CSS_SELECTOR, "#averageCustomerReviews_feature_div > div:nth-child(2) > span:nth-child(1) > span:nth-child(1) > span:nth-child(1) > a:nth-child(1) > span:nth-child(1)").text
-        print("rating ", product_info["rating"])
     except NoSuchElementException as e:
         print("no rating")
     
     # product number of rates
     try:
         product_info["rate_count"] = driver.find_element(By.ID, "acrCustomerReviewText").text
-        print("number of rates ", product_info["rate_count"])
     except NoSuchElementException as e:
         print("no rate count")
 
     # product image source
     try:    
         product_info["image_src"] = driver.find_element(By.ID, "landingImage").get_attribute("src")
-        print("image: ", product_info["image_src"])
     except NoSuchElementException as e:
         print("no image")
 
     # product price
     try:    
         product_info["price"] = driver.find_element(By.CSS_SELECTOR, "#corePriceDisplay_desktop_feature_div > div.a-section.a-spacing-none.aok-align-center > span.a-price.aok-align-center.reinventPricePriceToPayMargin.priceToPay > span:nth-child(2) > span.a-price-whole").text
-        print("price ", product_info["price"])
     except NoSuchElementException as e:
         print("no price")
 
@@ -81,8 +81,6 @@ def findInformation():
         td_elements = table.find_elements(By.TAG_NAME, "td")
         for td_element in td_elements:
             td_text = td_text + td_element.text + " "
-
-        print("Table Data Text:", td_text)
     except NoSuchElementException as e:
         print("no table data") 
 
@@ -112,7 +110,7 @@ def findInformation():
         review_text = []
         for rev in reviews:
             review_text.append(rev.text)
-            print(review_text)
+
         product_info["reviews"] = review_text 
 
         # get back from review page to product page
@@ -159,21 +157,35 @@ def crawlProduct(page):
             "Product Index": (page * 16) + i + 1,
             "Product Data": product_data
         })
-
+        
+        time.sleep(5)
+        
         # crawling related products
-        time.sleep(10)
+        from selenium.webdriver.common.keys import Keys
+        header_element = driver.find_element(By.XPATH, '//*[text()="Products related to this item"]')
+        driver.execute_script("arguments[0].scrollIntoView(true);", header_element)
+        
+        delay = 15
         try:
-            related_products_table = driver.find_element(By.ID, "anonCarousel1")
-        except NoSuchElementException as e:
-            related_products_table = driver.find_element(By.ID, "anonCarousel6")
-
+            related_products_table = WebDriverWait(driver, delay).until(
+                EC.presence_of_element_located((By.ID, 'anonCarousel1'))
+            )
+            print("Element is present in the DOM now")
+        except NoSuchElementException:
+            related_products_table = WebDriverWait(driver, delay).until(
+                EC.presence_of_element_located((By.ID, 'anonCarousel6'))
+            )
+        except TimeoutException:
+            print("Element did not show up")
+            
         related_products = related_products_table.find_elements(By.TAG_NAME, "li")
         related_links = []
         for index, rp in enumerate(related_products):
             if index == 2:
                 break
             related_links.append(rp.find_element(By.CLASS_NAME, "a-link-normal").get_attribute("href"))
-                
+        print(related_links)
+        
         for link in related_links:
             driver.get(link)
             related_product_info = findInformation()
@@ -198,11 +210,8 @@ def crawlProduct(page):
 
         print()
 
-        
-
         with open(output_file_path, "w", encoding="utf-8") as json_file:
             json.dump(existing_data, json_file, ensure_ascii=False, indent=4)
-
 
         driver.back()
 
