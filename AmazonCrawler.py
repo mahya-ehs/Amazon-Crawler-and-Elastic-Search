@@ -29,7 +29,7 @@ time.sleep(5) # turn to 30 if neeeded
 # get to 'video games' page
 driver.get("https://www.amazon.com/s?rh=n%3A16225016011&fs=true&ref=lp_16225016011_sar")
 
-time.sleep(30)
+time.sleep(3)
 
 output_file_path = "scraped_data.json"
 
@@ -174,22 +174,20 @@ def crawlProduct(page):
             print("Element is present in the DOM now")
         except TimeoutException or NoSuchElementException:
             print("Element did not show up")
-
-        try:
-            related_products_table = WebDriverWait(driver, delay).until(
-                EC.presence_of_element_located((By.ID, 'anonCarousel3'))
-            )
-            print("Element is present in the DOM now")
-        except TimeoutException or NoSuchElementException:
-            print("Element did not show up")
-        
-        try:
-            related_products_table = WebDriverWait(driver, delay).until(
-                EC.presence_of_element_located((By.ID, 'anonCarousel6'))
-            )
-            print("Element is present in the DOM now")
-        except TimeoutException or NoSuchElementException:
-            print("Element did not show up")
+            try:
+                related_products_table = WebDriverWait(driver, delay).until(
+                    EC.presence_of_element_located((By.ID, 'anonCarousel3'))
+                )
+                print("Element is present in the DOM now")
+            except TimeoutException or NoSuchElementException:
+                print("Element did not show up")
+                try:
+                    related_products_table = WebDriverWait(driver, delay).until(
+                        EC.presence_of_element_located((By.ID, 'anonCarousel6'))
+                    )
+                    print("Element is present in the DOM now")
+                except TimeoutException or NoSuchElementException:
+                    print("Element did not show up")
         
         if related_products_table is not None:
             related_products = related_products_table.find_elements(By.TAG_NAME, "li")
